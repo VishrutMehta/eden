@@ -68,6 +68,10 @@ settings.base.debug = False
 # Uncomment to use Content Delivery Networks to speed up Internet-facing sites
 #settings.base.cdn = True
 
+# Uncomment this and set the solr url 
+# E.g. the default solr url is: "http://127.0.0.1:8983/solr/"
+#setting.base.solr_url = False
+
 # This setting will be automatically changed _before_ registering the 1st user
 settings.auth.hmac_key = "akeytochange"
 
