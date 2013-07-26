@@ -255,6 +255,7 @@ if len(pop_list) > 0:
     s3.import_user = bi.import_user
     s3.import_image = bi.import_image
     s3.import_remote_csv = bi.import_remote_csv
+    s3.import_doc = bi.import_doc
 
     # Disable table protection
     protected = s3mgr.PROTECTED
