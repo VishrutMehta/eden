@@ -28,7 +28,9 @@ def document_create_index(document, user_id=None):
     import sunburnt
 
     document = json.loads(document)
-    table = s3db.doc_document
+    tablename = document["tablename"]
+
+    table = s3db[tablename]
     id = document["id"]
 
     name = document["name"]
@@ -37,7 +39,12 @@ def document_create_index(document, user_id=None):
     filename = "%s/%s/uploads/%s" % (os.path.abspath("applications"), \
                                     request.application, filename)
 
-    si = sunburnt.SolrInterface(settings.get_base_solr_url())
+    try:
+        si = sunburnt.SolrInterface(settings.get_base_solr_url())
+    except:
+        from s3.s3utils import s3_debug
+        s3_debug("Connection Error: Solr not connected")
+        return
 
     extension = os.path.splitext(filename)[1][1:]
 
@@ -70,6 +77,7 @@ def document_create_index(document, user_id=None):
     document = {
                 "id": str(id), # doc_document.id
                 "name": data, # the data of the file
+                "tablename": tablename, # name of the database table
                 "url": filename, # the encoded file name stored in uploads/
                 "filename": name, # the filename actually uploaded by the user
                 "filetype": extension  # x.pdf -> pdf is the extension of the file
@@ -80,8 +88,6 @@ def document_create_index(document, user_id=None):
     si.commit()
     # After Indexing, set the value for has_been_indexed to True in the database
     db(table.id == id).update(has_been_indexed = True)
-
-    db.commit()
 
 tasks["document_create_index"] = document_create_index
 
@@ -102,8 +108,6 @@ def document_delete_index(document, user_id=None):
     si.commit()
     # After removing the index, set has_been_indexed value to False in the database
     db(table.id == id).update(has_been_indexed = False)
-
-    db.commit()
 
 tasks["document_delete_index"] = document_delete_index
 
