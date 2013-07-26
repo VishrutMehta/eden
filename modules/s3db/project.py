@@ -408,6 +408,7 @@ class S3ProjectModel(S3Model):
             append("code")
         append("name")
         append("organisation_id")
+        append((T("Uploaded File"), "document.file"))
         if mode_3w:
             append((T("Locations"), "location.location_id"))
         if use_sectors:

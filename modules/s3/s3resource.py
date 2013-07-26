@@ -576,7 +576,6 @@ class S3Resource(object):
 
         # Query to use for filtering
         filter_query = query
-
         #if DEBUG:
         #    _start = datetime.datetime.now()
         #    _debug("select of %s starting" % tablename)
@@ -4663,6 +4662,10 @@ class S3FieldSelector(object):
         return S3ResourceQuery(S3ResourceQuery.BELONGS, self, value)
 
     # -------------------------------------------------------------------------
+    def text(self, value):
+        return S3ResourceQuery(S3ResourceQuery.TEXT, self, value)
+
+    # -------------------------------------------------------------------------
     def contains(self, value):
         return S3ResourceQuery(S3ResourceQuery.CONTAINS, self, value)
 
@@ -5341,10 +5344,11 @@ class S3ResourceQuery(object):
     BELONGS = "belongs"
     CONTAINS = "contains"
     ANYOF = "anyof"
+    TEXT = "text"
 
     OPERATORS = [NOT, AND, OR,
                  LT, LE, EQ, NE, GE, GT,
-                 LIKE, BELONGS, CONTAINS, ANYOF]
+                 LIKE, BELONGS, CONTAINS, ANYOF, TEXT]
 
     # -------------------------------------------------------------------------
     def __init__(self, op, left=None, right=None):
@@ -5509,14 +5513,57 @@ class S3ResourceQuery(object):
     # -------------------------------------------------------------------------
     def transform(self, resource):
         """
-            Placeholder for transformation method
+            Returns a S3ResourceQuery with tranformed query: text -> belongs
+            
+            @param resource: the resource to resolve the query against
 
-            @param resource: the S3Resource
-        """
+        """    
 
-        # @todo: implement
-        return self
-        
+        op = self.op
+        l = self.left
+        r = self.right
+
+        if op == self.AND:
+            l = l.transform(resource)
+            r = r.transform(resource)
+            if l is None or r is None:
+                return l if r is None else r if l is None else None
+            else:
+                return l & r          
+        elif op == self.OR:
+            l = l.transform(resource)
+            r = r.transform(resource)
+            if l is None or r is None:
+                return l if r is None else r if l is None else None
+            else:
+                return l | r
+        elif op == self.NOT:
+            l = l.transform(resource)
+            if l is None:
+                return None
+            else:
+                return ~l
+        elif op == self.TEXT:
+            rfield = S3ResourceField(resource, l.name)
+            if rfield.ftype == "upload":
+                l = self.fulltext(resource, l, r)
+                return l
+            elif rfield.ftype == "string" or rfield.ftype == "text":
+                if isinstance(r, basestring):
+                    r = r.replace("*", "%").lower()
+                elif isinstance(r, list):
+                    r = [x.replace("*", "%").lower() for x in r if x is not None]
+                return l.like(r)
+            elif rfield.ftype == "list":
+                return l.contains(r)
+            else:
+                from s3utils import s3_debug
+                s3_debug("Error: Field Type for text operator not defined.")
+                return None
+        else:
+            return self
+
+
     # -------------------------------------------------------------------------
     def query(self, resource):
         """
@@ -5668,6 +5715,54 @@ class S3ResourceQuery(object):
         else:
             q = None
         return q
+
+    # -------------------------------------------------------------------------
+    def fulltext(self, resource, l, r):
+        """
+            Does a Full-Text Search and Transform it into a BELONG Query 
+
+            @param resource: the resource to resolve the query against
+            @param l: the left operand
+            @param r: the right operand
+
+            @return: The S3ResourceQuery with BELONGS operator
+        """
+
+        solr_url = current.deployment_settings.get_base_solr_url()
+
+        if not solr_url:
+            return None
+        
+        import sunburnt
+        try:
+            si = sunburnt.SolrInterface(solr_url)
+        except:
+            if current.response.s3.debug:
+                from s3utils import s3_debug
+                s3_debug("Connection Refused: Solr not available.")
+            return None
+
+        records = si.query(name=r).highlight("name").execute()
+        fileid = [];
+
+        for record in records:
+            fileid.append(int(record["id"]))
+        if len(fileid) == 0:
+            return None
+        
+        context = resource.get_config("context")    
+        try:
+            l.name = context[l.name.strip("()")]
+        except KeyError:
+            pass
+
+        new_selector = l.name.split(".")
+        new_selector[-1] = "id"
+        new_selector = ".".join(new_selector)
+        l = S3FieldSelector(new_selector)
+
+        query_transform = l.belongs(fileid)
+        return query_transform
 
     # -------------------------------------------------------------------------
     def __call__(self, resource, row, virtual=True):
@@ -5902,6 +5997,8 @@ class S3ResourceQuery(object):
                 return "(%s contains any of %s)" % (l, r)
             elif op == self.LIKE:
                 return "(%s like %s)" % (l, r)
+            elif op == self.TEXT:
+                return "(%s text %s)" % (l, r)
             elif op == self.LT:
                 return "(%s < %s)" % (l, r)
             elif op == self.LE:

@@ -427,6 +427,12 @@ class S3TextFilter(S3FilterWidget):
         return INPUT(**attr)
 
 # =============================================================================
+class S3FullTextFilter(S3TextFilter):
+    """ Full-Text filter widget """
+
+    operator = "text"
+
+# =============================================================================
 class S3RangeFilter(S3FilterWidget):
     """ Numerical Range Filter Widget """
 

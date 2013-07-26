@@ -394,10 +394,15 @@ class S3DocumentLibrary(S3Model):
         doc = vars.file
        
         table = current.db.doc_document
+        try:
+            name = table.file.retrieve(doc)[0]
+        except TypeError:
+            name = doc
 
         document = json.dumps(dict(filename=doc,
-                                  name=table.file.retrieve(doc)[0],
+                                  name=name,
                                   id=vars.id,
+                                  tablename="doc_document",
                                   ))
 
         current.s3task.async("document_create_index",

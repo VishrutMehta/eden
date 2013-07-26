@@ -331,7 +331,7 @@ def customize_project_project(**attr):
         if r.interactive:
             from s3.s3filter import S3TextFilter, S3OptionsFilter, S3LocationFilter, S3DateFilter
             filter_widgets = [
-                S3TextFilter(["name",
+                S3FullTextFilter(["name",
                               "code",
                               "description",
                               "organisation.name",
