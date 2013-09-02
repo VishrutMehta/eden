@@ -483,12 +483,12 @@ class S3Resource(object):
         self.rfilter.add_filter(f, component=alias, master=False)
 
     # -------------------------------------------------------------------------
-    def get_query(self, transform=False):
+    def get_query(self):
         """ Get the effective query """
 
         if self.rfilter is None:
             self.build_query()
-        return self.rfilter.get_query(transform=transform)
+        return self.rfilter.get_query()
 
     # -------------------------------------------------------------------------
     def get_filter(self):
@@ -567,7 +567,7 @@ class S3Resource(object):
         tablename = table._tablename
         pkey = str(table._id)
         
-        query = self.get_query(transform=True)
+        query = self.get_query()
         vfltr = self.get_filter()
         
         rfilter = self.rfilter
@@ -579,7 +579,6 @@ class S3Resource(object):
 
         # Query to use for filtering
         filter_query = query
-
         #if DEBUG:
         #    _start = datetime.datetime.now()
         #    _debug("select of %s starting" % tablename)
@@ -5581,17 +5580,6 @@ class S3ResourceQuery(object):
     # -------------------------------------------------------------------------
     def transform(self, resource):
         """
-            Placeholder for transformation method
-
-            @param resource: the S3Resource
-        """
-
-        # @todo: implement
-        return self
-        
-    # -------------------------------------------------------------------------
-    def transform(self, resource):
-        """
             Returns a S3ResourceQuery with tranformed query: text -> belongs
             
             @param resource: the resource to resolve the query against
@@ -5628,7 +5616,10 @@ class S3ResourceQuery(object):
                 l = self.fulltext(resource, l, r)
                 return l
             elif rfield.ftype == "string" or rfield.ftype == "text":
-                r = "*%s*" % r
+                if isinstance(r, basestring):
+                    r = r.replace("*", "%").lower()
+                elif isinstance(r, list):
+                    r = [x.replace("*", "%").lower() for x in r if x is not None]
                 return l.like(r)
             elif rfield.ftype == "list":
                 return l.contains(r)
@@ -5810,7 +5801,6 @@ class S3ResourceQuery(object):
             return None
         
         import sunburnt
-
         try:
             si = sunburnt.SolrInterface(solr_url)
         except:
@@ -5824,7 +5814,10 @@ class S3ResourceQuery(object):
 
         for record in records:
             fileid.append(int(record["id"]))
-
+        if len(fileid) == 0:
+            return None
+        fileid.sort()
+        
         context = resource.get_config("context")    
         try:
             l.name = context[l.name.strip("()")]
@@ -6072,6 +6065,8 @@ class S3ResourceQuery(object):
                 return "(%s contains any of %s)" % (l, r)
             elif op == self.LIKE:
                 return "(%s like %s)" % (l, r)
+            elif op == self.TEXT:
+                return "(%s text %s)" % (l, r)
             elif op == self.LT:
                 return "(%s < %s)" % (l, r)
             elif op == self.LE:

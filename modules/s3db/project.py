@@ -408,6 +408,7 @@ class S3ProjectModel(S3Model):
             append("code")
         append("name")
         append("organisation_id")
+        append((T("Uploaded File"), "document.file"))
         if mode_3w:
             append((T("Locations"), "location.location_id"))
         if use_sectors:
@@ -4126,7 +4127,7 @@ class S3ProjectTaskModel(S3Model):
 
         # Search Method
         filter_widgets = [
-            S3TextFilter(["name",
+            S3FullTextFilter(["name",
                           "description",
                           ],
                          label=T("Description"),

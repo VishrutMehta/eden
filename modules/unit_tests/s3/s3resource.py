@@ -240,7 +240,7 @@ class DocumentFullTextSearchTests(unittest.TestCase):
                                        "PROJDOC2",
                                        "PROJDOC3"], filter=q)
 
-        rows = resource.select(["document.uuid", "document.id"], as_rows=True, transform=True)
+        rows = resource.select(["document.uuid", "document.id"], as_rows=True)
         
         for row in rows:
             if row.doc_document.uuid == "DOC1":
@@ -255,18 +255,19 @@ class DocumentFullTextSearchTests(unittest.TestCase):
         else:    
             self.assertEqual(str(len(rows)), str(0))
 
+        a1, a2, a3 = sorted([id1, id2, id3])
         query = resource.rfilter.get_query()
         if ft:
             expected = "((((project_project.deleted <> 'T') AND (project_project.id > 0)) AND " \
                         "(project_project.uuid IN ('PROJDOC1','PROJDOC2','PROJDOC3'))) AND " \
-                        "(((project_project.name LIKE '*test*') OR " \
+                        "(((project_project.name LIKE 'test') OR " \
                         "(doc_document.id IN (%s,%s,%s))) OR " \
-                        "((project_project.name LIKE '*document*') OR " \
-                        "(doc_document.id IN (%s)))))" % (str(id2), str(id1), str(id3), str(id1))
+                        "((project_project.name LIKE 'document') OR " \
+                        "(doc_document.id IN (%s)))))" % (str(a1), str(a2), str(a3), str(id1))
         else:                
             expected = "((((project_project.deleted <> 'T') AND (project_project.id > 0)) AND " \
                         "(project_project.uuid IN ('PROJDOC1','PROJDOC2','PROJDOC3'))) AND " \
-                        "((project_project.name LIKE '*test*') OR (project_project.name LIKE '*document*')))"
+                        "((project_project.name LIKE 'test') OR (project_project.name LIKE 'document')))"
 
         self.assertEqual(str(expected), str(query))        
 
@@ -287,14 +288,14 @@ class DocumentFullTextSearchTests(unittest.TestCase):
                                        "PROJDOC2",
                                        "PROJDOC3"], filter=q)
 
-        rows = resource.select(["document.uuid", "document.id"], as_rows=True, transform=True)
+        rows = resource.select(["document.uuid", "document.id"], as_rows=True)
         
         self.assertEqual(str(len(rows)), str(0))
 
         query = resource.rfilter.get_query()
         expected = "((((project_project.deleted <> 'T') AND (project_project.id > 0)) AND " \
                     "(project_project.uuid IN ('PROJDOC1','PROJDOC2','PROJDOC3'))) AND " \
-                    "((project_project.name LIKE '*test*') OR (project_project.name LIKE '*document*')))"
+                    "((project_project.name LIKE 'test') OR (project_project.name LIKE 'document')))"
             
         current.deployment_settings.base.solr_url = tempurl
         self.assertEqual(str(expected), str(query))
@@ -337,15 +338,16 @@ class DocumentFullTextSearchTests(unittest.TestCase):
 
         q = q.transform(resource)
         query = q.query(resource)
+        a1, a2, a3 = sorted([id1, id2, id3])
 
         if ft:
-            expected = "(((project_project.name LIKE '*test*') OR " \
+            expected = "(((project_project.name LIKE 'test') OR " \
                         "(doc_document.id IN (%s,%s,%s))) OR "\
-                        "((project_project.name LIKE '*document*') OR "\
-                        "(doc_document.id IN (%s))))" % (str(id2), str(id1), str(id3), str(id1))
+                        "((project_project.name LIKE 'document') OR "\
+                        "(doc_document.id IN (%s))))" % (str(a1), str(a2), str(a3), str(id1))
         else:
-            expected = "((project_project.name LIKE '*test*') OR "\
-                        "(project_project.name LIKE '*document*'))"
+            expected = "((project_project.name LIKE 'test') OR "\
+                        "(project_project.name LIKE 'document'))"
             
         self.assertEqual(str(expected), str(query))
 
@@ -437,10 +439,11 @@ class DocumentFullTextSearchTests(unittest.TestCase):
 
         project_project = resource.table
         query = q.transform(resource)
+        a1, a2, a3 = sorted([id1, id2, id3])
 
         if ft:
             query = query.represent(resource)
-            expected = "(doc_document.id in [%s, %s, %s])" % (str(id2), str(id1), str(id3))
+            expected = "(doc_document.id in [%s, %s, %s])" % (str(a1), str(a2), str(a3))
         else:
             expected = "None"
         self.assertEqual(str(expected), str(query))
@@ -458,13 +461,13 @@ class DocumentFullTextSearchTests(unittest.TestCase):
         doc_document = resource.table
 
         if ft:
-            expected = '(((project_project.name like "*test*") or ' \
+            expected = '(((project_project.name like "test") or ' \
                         '(doc_document.id in [%s, %s, %s])) or ' \
-                    '((project_project.name like "*document*") or ' \
-                     '(doc_document.id in [%s])))' % (str(id2), str(id1), str(id3), str(id1))
+                    '((project_project.name like "document") or ' \
+                     '(doc_document.id in [%s])))' % (str(a1), str(a2), str(a3), str(id1))
         else:
-            expected = '((project_project.name like "*test*") or ' \
-                    '(project_project.name like "*document*"))'
+            expected = '((project_project.name like "%test%") or ' \
+                    '(project_project.name like "%document%"))'
             
         self.assertEqual(str(expected), str(query))
 
@@ -484,7 +487,7 @@ class DocumentFullTextSearchTests(unittest.TestCase):
         query = q.transform(resource)
         query = query.represent(resource)
 #       doc_document = resource.table
-        expected = '((project_project.name like "*test*") or (project_project.name like "*document*"))'
+        expected = '((project_project.name like "test") or (project_project.name like "document"))'
             
         current.deployment_settings.base.solr_url = tempurl
         self.assertEqual(str(expected), str(query))
