@@ -5609,7 +5609,7 @@ class S3ResourceQuery(object):
                 l = self.fulltext(resource, l, r)
                 return l
             elif rfield.ftype == "string" or rfield.ftype == "text":
-                r = "*%s*" % r
+                #r = "*%s*" % r
                 return l.like(r)
             elif rfield.ftype == "list":
                 return l.contains(r)
@@ -5791,7 +5791,6 @@ class S3ResourceQuery(object):
             return None
         
         import sunburnt
-
         try:
             si = sunburnt.SolrInterface(solr_url)
         except:
@@ -6892,6 +6891,7 @@ class S3ResourceFilter(object):
                     self._add_query(q)
                 else:
                     self._add_query(q)
+        
         return self.query
 
     # -------------------------------------------------------------------------

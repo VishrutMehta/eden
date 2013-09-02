@@ -159,10 +159,11 @@ def customize_org_office(**attr):
             s3db = current.s3db
         
         if r.interactive:
-            from s3.s3filter import S3TextFilter, S3OptionsFilter, S3LocationFilter
+            from s3.s3filter import S3TextFilter, S3OptionsFilter, S3LocationFilter, S3FullTextFilter
             filter_widgets = [
-                S3TextFilter(["name",
+                S3FullTextFilter(["name",
                               "code",
+                              "document.file",
                               "comments",
                               "organisation_id$name",
                               "organisation_id$acronym",
@@ -258,9 +259,9 @@ def customize_org_organisation(**attr):
                 "logo",
                 "comments",
             )
-            from s3.s3filter import S3TextFilter, S3OptionsFilter, S3LocationFilter
+            from s3.s3filter import S3TextFilter, S3OptionsFilter, S3LocationFilter, S3FullTextFilter
             filter_widgets = [
-                S3TextFilter(["name", "acronym"],
+                S3FullTextFilter(["name", "acronym"],
                              label=T("Name"),
                              _class="filter-search",
                              ),
@@ -329,11 +330,12 @@ def customize_project_project(**attr):
             field.readable = field.writable = True
 
         if r.interactive:
-            from s3.s3filter import S3TextFilter, S3OptionsFilter, S3LocationFilter, S3DateFilter
+            from s3.s3filter import S3TextFilter, S3OptionsFilter, S3LocationFilter, S3DateFilter, S3FullTextFilter
             filter_widgets = [
-                S3TextFilter(["name",
+                S3FullTextFilter(["name",
                               "code",
                               "description",
+                              "document.file",
                               "organisation.name",
                               "organisation.acronym",
                               ],
@@ -401,9 +403,9 @@ def customize_project_location(**attr):
 
         if r.interactive:
             messages = current.messages
-            from s3.s3filter import S3TextFilter, S3OptionsFilter, S3LocationFilter, S3DateFilter
+            from s3.s3filter import S3TextFilter, S3OptionsFilter, S3LocationFilter, S3DateFilte, S3FullTextFilterr
             filter_widgets = [
-                S3TextFilter(["project_id$name",
+                S3FullTextFilter(["project_id$name",
                               "project_id$code",
                               "project_id$description",
                               "location_id$name",
@@ -499,9 +501,9 @@ def customize_project_organisation(**attr):
                 return False
 
         if r.interactive:
-            from s3.s3filter import S3TextFilter, S3OptionsFilter, S3LocationFilter
+            from s3.s3filter import S3TextFilter, S3OptionsFilter, S3LocationFilter, S3FullTextFilter
             filter_widgets = [
-                S3TextFilter(["project_id$name",
+                S3FullTextFilter(["project_id$name",
                               "project_id$code",
                               "project_id$description",
                               "organisation_id$name",
@@ -578,9 +580,9 @@ def customize_project_beneficiary(**attr):
                 return False
 
         if r.interactive:
-            from s3.s3filter import S3TextFilter, S3OptionsFilter, S3LocationFilter
+            from s3.s3filter import S3TextFilter, S3OptionsFilter, S3LocationFilter, S3FullTextFilter
             filter_widgets = [
-                S3TextFilter(["project_id$name",
+                S3FullTextFilter(["project_id$name",
                               "project_id$code",
                               "project_id$description",
                               "project_id$organisation.name",
