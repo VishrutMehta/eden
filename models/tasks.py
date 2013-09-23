@@ -45,7 +45,7 @@ def document_create_index(document, user_id=None):
         from s3.s3utils import s3_debug
         s3_debug("Connection Error: Solr not connected")
         return
-
+    
     extension = os.path.splitext(filename)[1][1:]
 
     if extension == "pdf":
@@ -82,7 +82,10 @@ def document_create_index(document, user_id=None):
                 "filename": name, # the filename actually uploaded by the user
                 "filetype": extension  # x.pdf -> pdf is the extension of the file
                 }
-
+    
+    # To delete the index if the document with the same id is available
+    si.delete(id)
+    si.commit()
     # Add and commit Indices
     si.add(document)
     si.commit()
