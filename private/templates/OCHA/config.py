@@ -329,11 +329,12 @@ def customize_project_project(**attr):
             field.readable = field.writable = True
 
         if r.interactive:
-            from s3.s3filter import S3TextFilter, S3OptionsFilter, S3LocationFilter, S3DateFilter
+            from s3.s3filter import S3TextFilter, S3OptionsFilter, S3LocationFilter, S3DateFilter, S3FullTextFilter
             filter_widgets = [
                 S3FullTextFilter(["name",
                               "code",
                               "description",
+                              "document.file",
                               "organisation.name",
                               "organisation.acronym",
                               ],

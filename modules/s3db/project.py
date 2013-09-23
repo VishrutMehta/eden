@@ -4128,7 +4128,7 @@ class S3ProjectTaskModel(S3Model):
 
         # Search Method
         filter_widgets = [
-            S3TextFilter(["name",
+            S3FullTextFilter(["name",
                           "description",
                           ],
                          label=T("Description"),
