@@ -452,7 +452,6 @@ class DocumentFullTextSearchTests(unittest.TestCase):
                 id3 = row.doc_document.id
         # Normal Query
         q = (S3FieldSelector("~.document.file").text("test"))
-
         project_project = resource.table
         query = q.transform(resource)
 
@@ -486,8 +485,8 @@ class DocumentFullTextSearchTests(unittest.TestCase):
             a1, a2, a3 = a.split(", ")
             self.assertEqual(set([a1, a2, a3]), set([str(id1), str(id2), str(id3)]))
         else:
-            expected = '((project_project.name like "%test%") or ' \
-                    '(project_project.name like "%document%"))'
+            expected = '((project_project.name like "test") or ' \
+                    '(project_project.name like "document"))'
             
             self.assertEqual(str(expected), str(query))
 
@@ -510,7 +509,6 @@ class DocumentFullTextSearchTests(unittest.TestCase):
         query = query.represent(resource)
 #       doc_document = resource.table
         expected = '((project_project.name like "test") or (project_project.name like "document"))'
-            
         current.deployment_settings.base.solr_url = tempurl
         self.assertEqual(str(expected), str(query))
 
@@ -519,8 +517,35 @@ class DocumentFullTextSearchTests(unittest.TestCase):
     def tearDownClass(cls):
 
         import os
+        import sunburnt    
+        
         request = current.request
+        
+        try:
+            si = sunburnt.SolrInterface(current.deployment_settings.get_base_solr_url())
+            ft = True
+        except:
+            if current.response.s3.debug:
+                from s3.s3utils import s3_debug
+                s3_debug("Connection Refused: Solr not available.")
+            ft = False
 
+        s3db = current.s3db
+        resource = s3db.resource("project_project",
+                                  uid=["PROJDOC1",
+                                       "PROJDOC2",
+                                       "PROJDOC3"])
+
+        rows = resource.select(["document.uuid", "document.id"], as_rows=True)
+        
+        for row in rows:
+            if row.doc_document.uuid == "DOC1":
+                id1 = row.doc_document.id
+            elif row.doc_document.uuid == "DOC2":
+                id2 = row.doc_document.id
+            elif row.doc_document.uuid == "DOC3":
+                id3 = row.doc_document.id
+        
         os.remove(os.path.abspath("applications") + "/" + \
                    request.application + \
                        "/uploads/sample1.pdf")
@@ -531,6 +556,13 @@ class DocumentFullTextSearchTests(unittest.TestCase):
                    request.application + \
                        "/uploads/sample3.rtf")
         current.db.rollback()
+        if ft:
+            si.delete(int(id1))
+            si.delete(int(id2))
+            si.delete(int(id2))
+            si.commit()
+        else:
+            pass
         current.auth.override = False
 
 
